@@ -2,6 +2,8 @@
 
 ## ncmpcpp – featureful ncurses based MPD client inspired by ncmpc
 
+[Lorenz demo video example](https://www.youtube.com/watch?v=ZijvJshnk2Y)
+
 ### Project status
 
 The project is officially in maintenance mode. I (Andrzej Rybczak) still use it
@@ -39,7 +41,7 @@ new, incompatible versions of dependencies, it will be fixed.
 ### Installation:
 The simplest way to compile this package is:
 
-  1. `cd` to the directory containing the package's source code.
+  1. `cd ~/ncmpcpp-lorenz.`
 
   For the next two commands, `csh` users will need to prefix them with
   `sh `.
@@ -48,15 +50,16 @@ The simplest way to compile this package is:
 
   3. Run `./configure` to configure the package for your system.  This
      will take a while.  While running, it prints some messages
-     telling which features it is checking for.
+     telling which features it is checking for. for example: `./configure --enable-visualizer --with-fftw --enable-outputs --enable-taglib`
+     should enable everything required for every ncmpcpp feature.
 
-  4. Run `make` to compile the package.
+  4. Run `make -j$(nproc)` to compile the package.
 
-  5. Type `make install` to install the programs and any data files
+  5. Type `sudo make install` to install the programs and any data files
      and documentation.
 
   6. You can remove the program binaries and object files from the
-     source code directory by typing `make clean`.
+     source code directory by typing `sudo make clean`.
 
 Detailed intallation instructions can be found in the `INSTALL` file. 
 
