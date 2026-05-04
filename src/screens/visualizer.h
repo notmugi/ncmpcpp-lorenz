@@ -71,6 +71,8 @@ private:
 	void DrawSoundWaveFillStereo(const int16_t *, const int16_t *, ssize_t, size_t);
 	void DrawSoundEllipse(const int16_t *, ssize_t, size_t, size_t);
 	void DrawSoundEllipseStereo(const int16_t *, const int16_t *, ssize_t, size_t);
+	void DrawLorenz(const int16_t *, ssize_t, size_t, size_t);
+	void DrawLorenzStereo(const int16_t *, const int16_t *, ssize_t, size_t);
 #	ifdef HAVE_FFTW3_H
 	void DrawFrequencySpectrum(const int16_t *, ssize_t, size_t, size_t);
 	void DrawFrequencySpectrumStereo(const int16_t *, const int16_t *, ssize_t, size_t);
@@ -104,6 +106,10 @@ private:
 	size_t m_sample_consumption_rate_dn_ctr;
 
 	double m_auto_scale_multiplier;
+
+	// Lorenz attractor rotation state (persists across frames)
+	double m_lorenz_rotation_left;
+	double m_lorenz_rotation_right;
 #	ifdef HAVE_FFTW3_H
 	size_t m_fftw_results;
 	double *m_fftw_input;

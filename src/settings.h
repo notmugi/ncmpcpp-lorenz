@@ -83,6 +83,9 @@ struct Configuration
 	std::string lastfm_preferred_language;
 	std::wstring progressbar;
 	std::wstring visualizer_chars;
+	double visualizer_lorenz_rotation_min;
+	double visualizer_lorenz_rotation_max;
+	double visualizer_lorenz_sensitivity;
 	size_t visualizer_fps;
 	bool visualizer_autoscale;
 	bool visualizer_spectrum_smooth_look;

@@ -98,7 +98,7 @@
 ## with fftw3 support.
 ##
 #
-## Available values: spectrum, wave, wave_filled, ellipse.
+## Available values: spectrum, wave, wave_filled, ellipse, lorenz.
 ##
 #visualizer_type = spectrum
 #
@@ -153,6 +153,20 @@
 #
 #visualizer_spectrum_log_scale_x = yes
 #visualizer_spectrum_log_scale_y = yes
+#
+##### lorenz attractor visualizer #####
+##
+## Minimum and maximum rotation speed. Higher values = faster spin.
+## The rotation reacts to amplitude within these bounds.
+##
+#visualizer_lorenz_rotation_min = 0.05
+#visualizer_lorenz_rotation_max = 20
+#
+## How much the attractor shape reacts to music amplitude.
+## Higher = the butterfly opens up more at lower volumes.
+## Range 0.1–10.0, default 1.8.
+##
+#visualizer_lorenz_sensitivity = 1.8
 #
 ##### system encoding #####
 ##

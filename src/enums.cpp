@@ -188,6 +188,9 @@ std::ostream &operator<<(std::ostream& os, VisualizerType vt)
 		case VisualizerType::Ellipse:
 			os << "sound ellipse";
 			break;
+		case VisualizerType::Lorenz:
+			os << "lorenz attractor";
+			break;
 	}
 	return os;
 }
@@ -206,6 +209,8 @@ std::istream &operator>>(std::istream& is, VisualizerType &vt)
 #	endif // HAVE_FFTW3_H
 	else if (svt == "ellipse")
 		vt = VisualizerType::Ellipse;
+	else if (svt == "lorenz")
+		vt = VisualizerType::Lorenz;
 	else
 		is.setstate(std::ios::failbit);
 	return is;

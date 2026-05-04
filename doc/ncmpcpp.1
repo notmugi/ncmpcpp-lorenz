@@ -96,7 +96,7 @@ Name of output that provides data for visualizer. Needed to keep sound and visua
 .B visualizer_in_stereo = yes/no
 Should be set to 'yes', if fifo output's format was set to 44100:16:2.
 .TP
-.B visualizer_type = spectrum/wave/wave_filled/ellipse
+.B visualizer_type = spectrum/wave/wave_filled/ellipse/lorenz
 Defines default visualizer type (spectrum is available only if ncmpcpp was compiled with fftw support).
 .TP
 .B visualizer_look = STRING
@@ -110,6 +110,15 @@ The amount of frames per second for the visualizer.
 .TP
 .B visualizer_autoscale = yes/no
 Automatically scale visualizer size.
+.TP
+.B visualizer_lorenz_rotation_min = NUMBER
+Minimum rotation speed for the lorenz attractor visualizer in rotations per second. Default: 0.05.
+.TP
+.B visualizer_lorenz_rotation_max = NUMBER
+Maximum rotation speed for the lorenz attractor visualizer in rotations per second. Default: 20.
+.TP
+.B visualizer_lorenz_sensitivity = NUMBER
+How much the lorenz attractor shape reacts to audio amplitude. Higher values cause the butterfly to open up more at lower volumes. Range 0.1\-10.0, default: 1.8.
 .TP
 .B visualizer_spectrum_smooth_look = yes/no
 For spectrum visualizer, use unicode block characters for a smoother, more continuous look. This will override the visualizer_look option. With transparent terminals and visualizer_in_stereo set, artifacts may be visible on the bottom half of the visualization.

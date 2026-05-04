@@ -75,6 +75,8 @@ Visualizer::Visualizer()
 , m_sample_consumption_rate(5)
 , m_sample_consumption_rate_up_ctr(0)
 , m_sample_consumption_rate_dn_ctr(0)
+, m_lorenz_rotation_left(0.0)
+, m_lorenz_rotation_right(0.0)
 #	ifdef HAVE_FFTW3_H
 	,
   DFT_NONZERO_SIZE(2048 * (2*Config.visualizer_spectrum_dft_size + 4)),
@@ -428,6 +430,118 @@ void Visualizer::DrawSoundEllipseStereo(const int16_t *buf_left, const int16_t *
 
 /**********************************************************************/
 
+// Lorenz attractor visualizer ported from cli-visualizer.
+// Rotates based on channel volume; colors by distance from equilibrium points.
+void Visualizer::DrawLorenz(const int16_t *buf, ssize_t samples,
+                             size_t, size_t)
+{
+	DrawLorenzStereo(buf, buf, samples, w.getHeight() / 2);
+}
+
+void Visualizer::DrawLorenzStereo(const int16_t *buf_left,
+                                   const int16_t *buf_right,
+                                   ssize_t samples, size_t)
+{
+	if (samples <= 0)
+		return;
+
+	const size_t win_height  = w.getHeight();
+	const size_t win_width   = w.getWidth();
+	const size_t half_height = win_height / 2;
+	const double half_w      = win_width / 2.0;
+	const double half_h      = static_cast<double>(half_height);
+
+	static const double k_h    = 0.01;
+	static const double k_ha   = 0.1;   // k_h * k_a
+	static const double k_b1   = 7.1429;
+	static const double k_b2   = 0.000908845;
+	static const double k_c    = 8.0 / 3.0;
+	static const double k_rot  = 1000.0;
+	static const double k_ang  = 2.0 * boost::math::constants::pi<double>() / k_rot;
+	static const size_t k_max_color_idx = 6;
+
+	double avg_left = 0.0, avg_right = 0.0;
+	for (ssize_t i = 0; i < samples; ++i)
+	{
+		avg_left  += std::abs(buf_left[i]);
+		avg_right += std::abs(buf_right[i]);
+	}
+	avg_left  = avg_left  / samples * 2.0;
+	avg_right = avg_right / samples;
+	const double average = (avg_left + avg_right) * 0.5;
+
+	const double fps   = static_cast<double>(Config.visualizer_fps);
+	const double min_step = Config.visualizer_lorenz_rotation_min * k_rot / fps;
+	const double max_step = Config.visualizer_lorenz_rotation_max * k_rot / fps;
+	const double range = max_step - min_step;
+	const double rotation_interval_left  = min_step + std::pow(avg_left  / 65536.0, 3.25) * range;
+	const double rotation_interval_right = min_step + std::pow(avg_right / 32768.0, 3.25) * range;
+
+	// Snap from dot (lorenz_b=1) to full butterfly (lorenz_b=k_b1+) with a
+	// steep curve. Sensitivity controls where the transition happens.
+	const double t = std::min(1.0, average * Config.visualizer_lorenz_sensitivity / 4000.0);
+	const double snap = t * t * t * (10.0 - 15.0 * t + 6.0 * t * t); // smootherstep
+	const double lorenz_b = 1.0 + (k_b1 - 1.0 + k_b2 * average) * snap;
+	const double z_center = lorenz_b - 1.0;
+	const double eq       = std::sqrt(k_c * lorenz_b - k_c);
+
+	const double denom = z_center - lorenz_b;
+	const double scaling = 1.25 * half_h /
+		std::sqrt(k_c * lorenz_b * lorenz_b - denom * denom / (lorenz_b * lorenz_b));
+
+	const double angle_x = m_lorenz_rotation_left  * k_ang;
+	const double angle_y = m_lorenz_rotation_right * k_ang;
+	const double cos_x = std::cos(angle_x);
+	const double sin_x = std::sin(angle_x);
+	const double cos_y = std::cos(angle_y);
+	const double sin_y = std::sin(angle_y);
+
+	if (m_lorenz_rotation_left  >= k_rot) m_lorenz_rotation_left  = 0.0;
+	if (m_lorenz_rotation_right >= k_rot) m_lorenz_rotation_right = 0.0;
+
+	const wchar_t ch = Config.visualizer_chars[0];
+	double x0 = 0.1, y0 = 0.0, z0 = 0.0;
+
+	for (ssize_t i = 0; i < samples; ++i)
+	{
+		const double x1 = x0 + k_ha * (y0 - x0);
+		const double y1 = y0 + k_h * (x0 * (lorenz_b - z0) - y0);
+		const double z1 = z0 + k_h * (x0 * y0 - k_c * z0);
+		x0 = x1;
+		y0 = y1;
+		z0 = z1;
+
+		if (i <= 100)
+			continue;
+
+		const double dz  = z0 - z_center;
+		const double dx1 = x0 - eq, dx2 = x0 + eq;
+		const double dy1 = y0 - eq, dy2 = y0 + eq;
+		const double d1  = std::sqrt(dx1*dx1 + dy1*dy1 + dz*dz);
+		const double d2  = std::sqrt(dx2*dx2 + dy2*dy2 + dz*dz);
+		const double dist = std::min(d1, d2);
+		const auto &color = toColor(static_cast<size_t>(dist),
+		                            k_max_color_idx, true);
+
+		const double px = (x0 * cos_y + dz * sin_y) * scaling;
+		const double py = (x0 * sin_x * sin_y + y0 * cos_x - dz * cos_y * sin_x) * scaling;
+
+		if (py <= -half_h || py >= half_h)
+			continue;
+		if (px <= -half_w || px >= half_w)
+			continue;
+
+		w << NC::XY(static_cast<size_t>(px + half_w),
+		            static_cast<size_t>(py + half_h))
+		  << color << ch << NC::FormattedColor::End<>(color);
+	}
+
+	m_lorenz_rotation_left  += rotation_interval_left;
+	m_lorenz_rotation_right += rotation_interval_right;
+}
+
+/**********************************************************************/
+
 #ifdef HAVE_FFTW3_H
 void Visualizer::DrawFrequencySpectrum(const int16_t *buf, ssize_t samples, size_t y_offset, size_t height)
 {
@@ -754,6 +868,11 @@ void Visualizer::InitVisualization()
 		draw = &Visualizer::DrawSoundEllipse;
 		drawStereo = &Visualizer::DrawSoundEllipseStereo;
 		break;
+	case VisualizerType::Lorenz:
+		rendered_samples = 44100 / 30;
+		draw = &Visualizer::DrawLorenz;
+		drawStereo = &Visualizer::DrawLorenzStereo;
+		break;
 	}
 	if (Config.visualizer_in_stereo)
 		rendered_samples *= 2;
@@ -773,6 +892,9 @@ void Visualizer::Clear()
 {
 	w.clear();
 	std::fill(m_rendered_samples.begin(), m_rendered_samples.end(), 0);
+	// Reset Lorenz rotation state on screen switch.
+	m_lorenz_rotation_left  = 0.0;
+	m_lorenz_rotation_right = 0.0;
 
 	// Discard any lingering data from the data source.
 	if (m_source_fd >= 0)
@@ -806,6 +928,9 @@ void Visualizer::ToggleVisualizationType()
 			break;
 #		endif // HAVE_FFTW3_H
 		case VisualizerType::Ellipse:
+			Config.visualizer_type = VisualizerType::Lorenz;
+			break;
+		case VisualizerType::Lorenz:
 			Config.visualizer_type = VisualizerType::Wave;
 			break;
 	}

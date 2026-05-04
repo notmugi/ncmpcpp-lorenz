@@ -245,6 +245,24 @@ bool Configuration::read(const std::vector<std::string> &config_paths, bool igno
 			boundsCheck<std::wstring::size_type>(result.size(), 2, 2);
 			return result;
 	});
+	p.add("visualizer_lorenz_rotation_min", &visualizer_lorenz_rotation_min,
+			"0.05", [](std::string v) {
+			auto result = verbose_lexical_cast<double>(v);
+			lowerBoundCheck<double>(result, 0.0);
+			return result;
+			});
+	p.add("visualizer_lorenz_rotation_max", &visualizer_lorenz_rotation_max,
+			"20.0", [](std::string v) {
+			auto result = verbose_lexical_cast<double>(v);
+			lowerBoundCheck<double>(result, 0.1);
+			return result;
+			});
+	p.add("visualizer_lorenz_sensitivity", &visualizer_lorenz_sensitivity,
+			"1.8", [](std::string v) {
+			auto result = verbose_lexical_cast<double>(v);
+			boundsCheck<double>(result, 0.1, 10.0);
+			return result;
+			});
 	p.add("visualizer_fps", &visualizer_fps,
 			"60", [](std::string v) {
 			uint32_t result = verbose_lexical_cast<uint32_t>(v);
